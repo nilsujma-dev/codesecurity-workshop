@@ -21,15 +21,19 @@ build_image:
   only:
     - main
 
-deploy_to_aks:
-  stage: deploy
+deploy_to_aks:  
+  stage: deploy  
   image: dtzar/helm-kubectl
   script:
+    # Decode the KUBECONFIG file
     - echo "$KUBECONFIG" | base64 -d > decoded_kubeconfig
     - export KUBECONFIG=decoded_kubeconfig
-    # Using envsubst to replace the placeholder with the actual IMAGE_TAG
-    - export __IMAGE_TAG__=$IMAGE_TAG
-    - envsubst < k8s/deployment.yaml | kubectl apply -f -
+
+    # Replace the placeholder with the actual IMAGE_TAG environment variable
+    - export IMAGE_TAG="$IMAGE_TAG"
+    - envsubst '$IMAGE_TAG' < k8s/deployment.yaml | kubectl apply -f -
+
+    # Apply the service configuration
     - kubectl apply -f k8s/service.yaml
   only:
     - main

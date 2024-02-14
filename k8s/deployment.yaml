@@ -15,6 +15,6 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: __IMAGE_TAG__ # This is the placeholder to be replaced
+        image: $IMAGE_TAG
         ports:
         - containerPort: 80
