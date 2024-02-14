@@ -20,6 +20,7 @@ build_image:
 deploy_to_server:
   stage: deploy
   script:
+    - echo "Deploying the Nginx container..."
     # Here you would have a script to deploy your Docker container to your server.
     # This can be done using SSH, or any deployment service you are using.
     # Example:
