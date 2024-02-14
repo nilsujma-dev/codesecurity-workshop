@@ -36,5 +36,4 @@ deploy_to_aks:
   environment:
     name: production
   before_script:
-    - kubectl create namespace gitlab-web --dry-run=client -o yaml | kubectl apply -f -
     - export DISABLE_SECURITY_SCAN=true
