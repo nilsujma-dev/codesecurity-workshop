@@ -1,10 +1,12 @@
 # .gitlab-ci.yml
+
 stages:
   - build
   - deploy
 
 variables:
-  IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+  IMAGE_NAME: my-nginx-image
+  IMAGE_TAG: "$CI_REGISTRY_IMAGE/$IMAGE_NAME:$CI_COMMIT_REF_SLUG"
 
 build_image:
   stage: build
@@ -12,26 +14,26 @@ build_image:
   services:
     - docker:19.03.12-dind
   script:
-    - docker build -t my-nginx-image .
-    - docker tag my-nginx-image $IMAGE_TAG
-    - echo "$CI_JOB_TOKEN" | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
-    - docker push $IMAGE_TAG
-
-deploy_to_server:
-  stage: deploy
-  script:
-    - echo "Deploying the Nginx container..."
-    # Here you would have a script to deploy your Docker container to your server.
-    # This can be done using SSH, or any deployment service you are using.
-    # Example:
-    # - scp my-nginx-image.tar user@yourserver:/path/to/destination
-    # - ssh user@yourserver 'docker load < /path/to/destination/my-nginx-image.tar'
-    # - ssh user@yourserver 'docker run --name nginx-container -d -p 80:80 my-nginx-image'
-  # You can specify when the job should be executed
+    - docker build -t "$IMAGE_NAME" .
+    - docker tag "$IMAGE_NAME" "$IMAGE_TAG"
+    - echo "$CI_JOB_TOKEN" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    - docker push "$IMAGE_TAG"
   only:
     - main
-    # You could specify more branches, tags or even remove this if you want 
-    # to deploy on each commit regardless of the branch
-  # Here we disable GitLab's Auto DevOps security features
+
+deploy_to_aks:
+  stage: deploy
+  image: bitnami/kubectl:latest
+  script:
+    - echo "$KUBECONFIG" | base64 -d > decoded_kubeconfig
+    - export KUBECONFIG=decoded_kubeconfig
+    - sed -i "s|image: .*|image: $IMAGE_TAG|g" k8s/deployment.yaml
+    - kubectl apply -f k8s/deployment.yaml
+    - kubectl apply -f k8s/service.yaml
+  only:
+    - main
+  environment:
+    name: production # Change or remove the environment as per your setup
   before_script:
+    - kubectl create namespace gitlab-web --dry-run=client -o yaml | kubectl apply -f -
     - export DISABLE_SECURITY_SCAN=true
