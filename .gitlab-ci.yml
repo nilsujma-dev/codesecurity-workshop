@@ -28,11 +28,11 @@ deploy_to_aks:
   image: mcr.microsoft.com/azure-cli
   script:
     # Log in to Azure CLI using the service principal
-    - az login --service-principal -u "$AZURE_APP_ID" -p "$AZURE_PASSWORD" --tenant "$AZURE_TENANT_ID"
+    - az login --service-principal -u "$AZURE_APP_ID" -p "$PASSWORD" --tenant "$AZURE_TENANT_ID"
     # Get AKS credentials
     - az aks get-credentials --resource-group aks-k8s-cluster_group --name aksk8sreg --overwrite-existing
     # Logging in to Azure Container Registry
-    - echo "$AZURE_PASSWORD" | docker login "$AZURE_ACR_NAME" -u "$AZURE_APP_ID" --password-stdin
+    - echo "$PASSWORD" | docker login "$AZURE_ACR_NAME" -u "$AZURE_APP_ID" --password-stdin
     - docker tag "$IMAGE_NAME" "$AZURE_IMAGE_TAG"
     - docker push "$AZURE_IMAGE_TAG"
     # Deploy using the Kubernetes manifests
