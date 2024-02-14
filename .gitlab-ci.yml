@@ -20,6 +20,10 @@ build_image:
     - docker tag "$IMAGE_NAME" "$GITLAB_IMAGE_TAG"
     - echo "$CI_JOB_TOKEN" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
     - docker push "$GITLAB_IMAGE_TAG"
+    # Logging in to Azure Container Registry
+    - echo "$PASSWORD" | docker login "$AZURE_ACR_NAME" -u "$AZURE_APP_ID" --password-stdin
+    - docker tag "$IMAGE_NAME" "$AZURE_IMAGE_TAG"
+    - docker push "$AZURE_IMAGE_TAG"
   only:
     - main
 
@@ -27,14 +31,6 @@ deploy_to_aks:
   stage: deploy
   image: mcr.microsoft.com/azure-cli
   script:
-    # Log in to Azure CLI using the service principal
-#    - az login --service-principal -u "$AZURE_APP_ID" -p "$PASSWORD" --tenant "$AZURE_TENANT_ID"
-#    # Get AKS credentials
-#    - az aks get-credentials --resource-group aks-k8s-cluster_group --name aksk8sreg --overwrite-existing
-    # Logging in to Azure Container Registry
-    - echo "$PASSWORD" | docker login "$AZURE_ACR_NAME" -u "$AZURE_APP_ID" --password-stdin
-    - docker tag "$IMAGE_NAME" "$AZURE_IMAGE_TAG"
-    - docker push "$AZURE_IMAGE_TAG"
     # Deploy using the Kubernetes manifests
     - export IMAGE_TAG="$AZURE_IMAGE_TAG"
     - envsubst < k8s/deployment.yaml | kubectl apply -f -
