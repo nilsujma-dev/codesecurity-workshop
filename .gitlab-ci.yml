@@ -6,18 +6,24 @@ stages:
 
 variables:
   IMAGE_NAME: my-nginx-image
-  IMAGE_TAG: "$CI_REGISTRY_IMAGE/$IMAGE_NAME:$CI_COMMIT_REF_SLUG"
+  GITLAB_IMAGE_TAG: "$CI_REGISTRY_IMAGE/$IMAGE_NAME:$CI_COMMIT_REF_SLUG"
+  AZURE_ACR_NAME: aksk8sreg.azurecr.io  # Your Azure Container Registry login server
+  AZURE_IMAGE_TAG: "$AZURE_ACR_NAME/$IMAGE_NAME:$CI_COMMIT_REF_SLUG"
 
 build_image:
   stage: build
   image: docker:19.03.12
   services:
-    - docker:19.03.12-dind
+    - docker:19.03.12-dind  
   script:
-    - docker build -t "${IMAGE_NAME}" .
-    - docker tag "${IMAGE_NAME}" "${IMAGE_TAG}"
+    - docker build -t "$IMAGE_NAME" .
+    - docker tag "$IMAGE_NAME" "$GITLAB_IMAGE_TAG"
     - echo "$CI_JOB_TOKEN" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
-    - docker push "${IMAGE_TAG}"
+    - docker push "$GITLAB_IMAGE_TAG"
+    # Logging in to Azure Container Registry
+    - echo "$AZURE_PASSWORD" | docker login "$AZURE_ACR_NAME" -u "$AZURE_APP_ID" --password-stdin 
+    - docker tag "$IMAGE_NAME" "$AZURE_IMAGE_TAG"
+    - docker push "$AZURE_IMAGE_TAG"
   only:
     - main
 
@@ -25,10 +31,13 @@ deploy_to_aks:
   stage: deploy
   image: dtzar/helm-kubectl
   script:
+    # Log in to Azure CLI using the service principal
+    - az login --service-principal -u "$AZURE_APP_ID" -p "$AZURE_PASSWORD" --tenant "$AZURE_TENANT_ID"
+    # Assuming the AKS cluster and ACR are in the same Azure Resource Group
+    - az aks get-credentials --resource-group aks-k8s-cluster_group --name aksk8sreg --overwrite-existing
     - echo "$KUBECONFIG" | base64 -d > decoded_kubeconfig
     - export KUBECONFIG=decoded_kubeconfig
-    # Using envsubst to replace the placeholder with the actual IMAGE_TAG
-    - export __IMAGE_TAG__=$IMAGE_TAG
+    - export IMAGE_TAG="$AZURE_IMAGE_TAG"
     - envsubst < k8s/deployment.yaml | kubectl apply -f -
     - kubectl apply -f k8s/service.yaml
   only:
@@ -36,4 +45,5 @@ deploy_to_aks:
   environment:
     name: production
   before_script:
+    - az login --service-principal -u "$AZURE_APP_ID" -p "$AZURE_PASSWORD" --tenant "$AZURE_TENANT_ID"
     - export DISABLE_SECURITY_SCAN=true
