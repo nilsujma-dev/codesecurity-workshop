@@ -14,26 +14,27 @@ build_image:
   services:
     - docker:19.03.12-dind
   script:
-    - docker build -t "$IMAGE_NAME" .
-    - docker tag "$IMAGE_NAME" "$IMAGE_TAG"
+    - docker build -t "${IMAGE_NAME}" .
+    - docker tag "${IMAGE_NAME}" "${IMAGE_TAG}"
     - echo "$CI_JOB_TOKEN" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
-    - docker push "$IMAGE_TAG"
+    - docker push "${IMAGE_TAG}"
   only:
     - main
 
 deploy_to_aks:
   stage: deploy
-  image: bitnami/kubectl:latest
+  image: dtzar/helm-kubectl
   script:
     - echo "$KUBECONFIG" | base64 -d > decoded_kubeconfig
     - export KUBECONFIG=decoded_kubeconfig
-    - sed -i "s|image: .*|image: $IMAGE_TAG|g" k8s/deployment.yaml
-    - kubectl apply -f k8s/deployment.yaml
+    # Using envsubst to replace the placeholder with the actual IMAGE_TAG
+    - export __IMAGE_TAG__=$IMAGE_TAG
+    - envsubst < k8s/deployment.yaml | kubectl apply -f -
     - kubectl apply -f k8s/service.yaml
   only:
     - main
   environment:
-    name: production # Change or remove the environment as per your setup
+    name: production
   before_script:
     - kubectl create namespace gitlab-web --dry-run=client -o yaml | kubectl apply -f -
     - export DISABLE_SECURITY_SCAN=true
