@@ -1,0 +1,36 @@
+# .gitlab-ci.yml
+stages:
+  - build
+  - deploy
+
+variables:
+  IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+
+build_image:
+  stage: build
+  image: docker:19.03.12
+  services:
+    - docker:19.03.12-dind
+  script:
+    - docker build -t my-nginx-image .
+    - docker tag my-nginx-image $IMAGE_TAG
+    - echo "$CI_JOB_TOKEN" | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
+    - docker push $IMAGE_TAG
+
+deploy_to_server:
+  stage: deploy
+  script:
+    # Here you would have a script to deploy your Docker container to your server.
+    # This can be done using SSH, or any deployment service you are using.
+    # Example:
+    # - scp my-nginx-image.tar user@yourserver:/path/to/destination
+    # - ssh user@yourserver 'docker load < /path/to/destination/my-nginx-image.tar'
+    # - ssh user@yourserver 'docker run --name nginx-container -d -p 80:80 my-nginx-image'
+  # You can specify when the job should be executed
+  only:
+    - main
+    # You could specify more branches, tags or even remove this if you want 
+    # to deploy on each commit regardless of the branch
+  # Here we disable GitLab's Auto DevOps security features
+  before_script:
+    - export DISABLE_SECURITY_SCAN=true
