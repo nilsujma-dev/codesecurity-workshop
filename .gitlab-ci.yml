@@ -6,9 +6,7 @@ stages:
 
 variables:
   IMAGE_NAME: my-nginx-image
-  GITLAB_IMAGE_TAG: "$CI_REGISTRY_IMAGE/$IMAGE_NAME:$CI_COMMIT_REF_SLUG"
-  AZURE_ACR_NAME: aksk8sreg.azurecr.io
-  AZURE_IMAGE_TAG: "$AZURE_ACR_NAME/$IMAGE_NAME:$CI_COMMIT_REF_SLUG"
+  IMAGE_TAG: "$CI_REGISTRY_IMAGE/$IMAGE_NAME:$CI_COMMIT_REF_SLUG"
 
 build_image:
   stage: build
@@ -16,23 +14,21 @@ build_image:
   services:
     - docker:19.03.12-dind
   script:
-    - docker build -t "$IMAGE_NAME" .
-    - docker tag "$IMAGE_NAME" "$GITLAB_IMAGE_TAG"
+    - docker build -t "${IMAGE_NAME}" .
+    - docker tag "${IMAGE_NAME}" "${IMAGE_TAG}"
     - echo "$CI_JOB_TOKEN" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
-    - docker push "$GITLAB_IMAGE_TAG"
-    # Logging in to Azure Container Registry
-#    - echo "$PASSWORD" | docker login "$AZURE_ACR_NAME" -u "$AZURE_APP_ID" --password-stdin
-#    - docker tag "$IMAGE_NAME" "$AZURE_IMAGE_TAG"
-#    - docker push "$AZURE_IMAGE_TAG"
+    - docker push "${IMAGE_TAG}"
   only:
     - main
 
 deploy_to_aks:
   stage: deploy
-  image: mcr.microsoft.com/azure-cli
+  image: dtzar/helm-kubectl
   script:
-    # Deploy using the Kubernetes manifests
-    - export IMAGE_TAG="$GITLAB_IMAGE_TAG"
+    - echo "$KUBECONFIG" | base64 -d > decoded_kubeconfig
+    - export KUBECONFIG=decoded_kubeconfig
+    # Using envsubst to replace the placeholder with the actual IMAGE_TAG
+    - export __IMAGE_TAG__=$IMAGE_TAG
     - envsubst < k8s/deployment.yaml | kubectl apply -f -
     - kubectl apply -f k8s/service.yaml
   only:
@@ -40,4 +36,4 @@ deploy_to_aks:
   environment:
     name: production
   before_script:
-    - export DISABLE_SECURITY_SCAN=true
+    - kubectl create namespace gitlab-web --dry-run=client -o yaml | kubectl apply -f -
