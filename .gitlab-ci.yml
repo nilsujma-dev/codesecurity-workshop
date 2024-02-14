@@ -7,36 +7,35 @@ stages:
 variables:
   IMAGE_NAME: my-nginx-image
   GITLAB_IMAGE_TAG: "$CI_REGISTRY_IMAGE/$IMAGE_NAME:$CI_COMMIT_REF_SLUG"
-  AZURE_ACR_NAME: aksk8sreg.azurecr.io  # Your Azure Container Registry login server
+  AZURE_ACR_NAME: aksk8sreg.azurecr.io
   AZURE_IMAGE_TAG: "$AZURE_ACR_NAME/$IMAGE_NAME:$CI_COMMIT_REF_SLUG"
 
 build_image:
   stage: build
   image: docker:19.03.12
   services:
-    - docker:19.03.12-dind  
+    - docker:19.03.12-dind
   script:
     - docker build -t "$IMAGE_NAME" .
     - docker tag "$IMAGE_NAME" "$GITLAB_IMAGE_TAG"
     - echo "$CI_JOB_TOKEN" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
     - docker push "$GITLAB_IMAGE_TAG"
-    # Logging in to Azure Container Registry
-    - echo "$AZURE_PASSWORD" | docker login "$AZURE_ACR_NAME" -u "$AZURE_APP_ID" --password-stdin 
-    - docker tag "$IMAGE_NAME" "$AZURE_IMAGE_TAG"
-    - docker push "$AZURE_IMAGE_TAG"
   only:
     - main
 
 deploy_to_aks:
   stage: deploy
-  image: dtzar/helm-kubectl
+  image: mcr.microsoft.com/azure-cli
   script:
     # Log in to Azure CLI using the service principal
     - az login --service-principal -u "$AZURE_APP_ID" -p "$AZURE_PASSWORD" --tenant "$AZURE_TENANT_ID"
-    # Assuming the AKS cluster and ACR are in the same Azure Resource Group
+    # Get AKS credentials
     - az aks get-credentials --resource-group aks-k8s-cluster_group --name aksk8sreg --overwrite-existing
-    - echo "$KUBECONFIG" | base64 -d > decoded_kubeconfig
-    - export KUBECONFIG=decoded_kubeconfig
+    # Logging in to Azure Container Registry
+    - echo "$AZURE_PASSWORD" | docker login "$AZURE_ACR_NAME" -u "$AZURE_APP_ID" --password-stdin
+    - docker tag "$IMAGE_NAME" "$AZURE_IMAGE_TAG"
+    - docker push "$AZURE_IMAGE_TAG"
+    # Deploy using the Kubernetes manifests
     - export IMAGE_TAG="$AZURE_IMAGE_TAG"
     - envsubst < k8s/deployment.yaml | kubectl apply -f -
     - kubectl apply -f k8s/service.yaml
@@ -45,5 +44,4 @@ deploy_to_aks:
   environment:
     name: production
   before_script:
-    - az login --service-principal -u "$AZURE_APP_ID" -p "$AZURE_PASSWORD" --tenant "$AZURE_TENANT_ID"
     - export DISABLE_SECURITY_SCAN=true
