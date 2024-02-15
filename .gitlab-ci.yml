@@ -1,6 +1,7 @@
 # .gitlab-ci.yml
 
 stages:
+  - gate1
   - build
   - azure-push
   - deploy
@@ -11,6 +12,11 @@ variables:
   AZURE_ACR_NAME: aksk8sreg.azurecr.io  # Replace with your actual ACR name
   AZURE_IMAGE_TAG: "$AZURE_ACR_NAME/$IMAGE_NAME:$CI_COMMIT_REF_SLUG"  # New variable for full ACR tag
 
+spectral-scan-gate1:
+  stage: gate1
+  script:
+    - curl -L "https://app.spectralops.io/latest/x/sh?dsn=$SPECTRAL_DSN" | sh
+    - $HOME/.spectral/spectral scan --ok  --include-tags base,audit
 
 build_image:
   stage: build
