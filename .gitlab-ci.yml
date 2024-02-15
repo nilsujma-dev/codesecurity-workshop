@@ -48,21 +48,11 @@ shiftleft_scan:
     # Pull the image from GitLab Registry
     - echo "$CI_JOB_TOKEN" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY" # Login to Gitlab Image Registry
     - docker pull "$IMAGE_TAG"
-
-    # Save the Docker image to a tar file
     - docker save "$IMAGE_TAG" -o image.tar
-
-    # Run the ShiftLeft image scan command
     - ./shiftleft image-scan -e d29d3391-5284-4a70-9d9b-1a5daf401b5d -i image.tar || true
-
-  # Make sure the job always succeeds (even if shiftleft image-scan finds issues)
-  when: on_failure
-  
-  # Define artifacts to store the image tar file for subsequent stages or jobs, if needed
   artifacts:
     paths:
       - image.tar
-
   only:
     - main
 
