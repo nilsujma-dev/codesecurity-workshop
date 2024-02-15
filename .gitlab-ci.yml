@@ -5,6 +5,7 @@ stages:
   - build
   - shiftleft-scan
   - azure-push
+  - acr-shiftleft-scan
   - deploy
 
 variables:
@@ -73,6 +74,27 @@ push_to_acr:
  
   only:
     - main
+
+acr_shiftleft_scan:  
+  stage: acr-shiftleft-scan  
+  image: docker:19.03.12  
+  services:  
+    - docker:19.03.12-dind
+  script:  
+    - echo "$AZURE_PASSWORD" | docker login "$AZURE_ACR_NAME" -u "$AZURE_APP_ID" --password-stdin
+    - docker pull "${AZURE_IMAGE_TAG}"
+    - docker save "${AZURE_IMAGE_TAG}" -o azureimage.tar
+    - chmod +x ./shiftleft
+
+    # Run the ShiftLeft image scan command  
+    - ./shiftleft image-scan -e d29d3391-5284-4a70-9d9b-1a5daf401b5d -i azureimage.tar || true
+  artifacts:  
+    paths:
+      - azureimage.tar
+  when: always
+  only:  
+    - main
+
 
 deploy_to_aks:  
   stage: deploy  
