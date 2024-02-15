@@ -49,6 +49,7 @@ shiftleft_scan:
     - echo "$CI_JOB_TOKEN" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY" # Login to Gitlab Image Registry
     - docker pull "$IMAGE_TAG"
     - docker save "$IMAGE_TAG" -o image.tar
+    - chmod +x ./shiftleft
     - ./shiftleft image-scan -e d29d3391-5284-4a70-9d9b-1a5daf401b5d -i image.tar || true
   artifacts:
     paths:
