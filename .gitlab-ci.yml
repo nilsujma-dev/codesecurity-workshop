@@ -6,7 +6,7 @@ stages:
   - deploy
 
 variables:
-  IMAGE_NAME: nginx-cloudworkshop
+  IMAGE_NAME: cloudsecurity-workshop
   IMAGE_TAG: "$CI_REGISTRY_IMAGE/$IMAGE_NAME:$CI_COMMIT_REF_SLUG"
   AZURE_ACR_NAME: aksk8sreg.azurecr.io  # Replace with your actual ACR name
   AZURE_IMAGE_TAG: "$AZURE_ACR_NAME/$IMAGE_NAME:$CI_COMMIT_REF_SLUG"  # New variable for full ACR tag
