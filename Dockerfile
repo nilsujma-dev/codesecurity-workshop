@@ -10,8 +10,6 @@ COPY nginx.conf /etc/nginx/conf.d
 # Copy a basic HTML file to the html directory
 COPY index.html /usr/share/nginx/html/index.html
 COPY access.html /usr/share/nginx/html/access.html
-COPY src/ /usr/share/nginx/html/src/
-COPY yarn.lock /usr/share/nginx/html/src/
 
 EXPOSE 80
 
