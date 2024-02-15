@@ -18,3 +18,5 @@ spec:
         image: $IMAGE_TAG
         ports:
         - containerPort: 80
+      imagePullSecrets:  # Add this field if not present
+      - name: gitlab-registry-secret  # The name of the secret you created
