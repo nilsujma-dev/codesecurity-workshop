@@ -1,11 +1,72 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html>
 <head>
-    <title>My Simple Site</title>
+    <meta charset="UTF-8">
+    <title>Code Security Workshop</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f7f7f7;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            text-align: center;
+            box-shadow: 0 4px 8px 0 rgba(0,0,0,0.1);
+            transition: 0.3s;
+            width: 50%;
+        }
+        .container:hover {
+            box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
+        }
+        .header {
+            padding: 2em;
+            background-color: #4CAF50;
+            color: white;
+        }
+        .body-text {
+            padding: 2em;
+            background-color: white;
+        }
+        .footer {
+            background-color: #ddd;
+            color: #333;
+            padding: 1em;
+            font-size: 0.8em;
+        }
+        .highlighted {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        a {
+            color: #333;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
-    <h1>Hello, World!</h1>
-    <p>Welcome to my simple site.</p>
+
+<div class="container">
+    <div class="header">
+        <h1>Welcome to the Code Security Workshop</h1>
+    </div>
+    <div class="body-text">
+        <p>Hello and welcome, web explorers and security enthusiasts!</p>
+        <p>Join us on an exciting journey through the landscape of code security.</p>
+        <p class="highlighted">Brought to you by Nils Ujma, your guide and instructor.</p>
+    </div>
+    <div class="footer">
+        Contact the instructor: <a href="mailto:nilsu@checkpoint.com">nilsu@checkpoint.com</a>
+    </div>
+</div>
+
 </body>
 </html>
