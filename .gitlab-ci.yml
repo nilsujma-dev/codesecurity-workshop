@@ -51,7 +51,7 @@ deploy_to_aks:
     - export KUBECONFIG=decoded_kubeconfig
 
     # Replace the placeholder with the actual IMAGE_TAG environment variable
-    - export IMAGE_TAG="$IMAGE_TAG"
+    - export IMAGE_TAG="$AZURE_IMAGE_TAG"
     - envsubst '$IMAGE_TAG' < k8s/deployment.yaml | kubectl apply -f -
 
     # Apply the service configuration
