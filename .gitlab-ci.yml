@@ -33,12 +33,10 @@ push_to_acr:
   script:
     # Log in to Azure using the service principal.
     - echo "$AZURE_PASSWORD" | docker login "$AZURE_ACR_NAME" -u "$AZURE_APP_ID" --password-stdin
-
-    # Tag the image for Azure ACR.
-    - docker tag "${IMAGE_NAME}" "${AZURE_IMAGE_TAG}"
-
-    # Push the image to Azure ACR.
+    - docker pull "${IMAGE_TAG}"  # Pull the image from GitLab Container Registry
+    - docker tag "${IMAGE_TAG}" "${AZURE_IMAGE_TAG}"  # Proper tagging for ACR
     - docker push "${AZURE_IMAGE_TAG}"
+ 
   only:
     - main
 
