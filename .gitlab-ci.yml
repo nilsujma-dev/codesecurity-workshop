@@ -1,7 +1,7 @@
 # .gitlab-ci.yml
 
 stages:
-  - gate1
+  - security-gates
   - build
   - azure-push
   - deploy
@@ -12,11 +12,18 @@ variables:
   AZURE_ACR_NAME: aksk8sreg.azurecr.io  # Replace with your actual ACR name
   AZURE_IMAGE_TAG: "$AZURE_ACR_NAME/$IMAGE_NAME:$CI_COMMIT_REF_SLUG"  # New variable for full ACR tag
 
-spectral-scan-gate1:
-  stage: gate1
+spectral-secret-gate1:
+  stage: security-gates
   script:
     - curl -L "https://get.spectralops.io/latest/x/sh?key=spu-3170851dd9934b12999c422987fed071" | sh
     - $HOME/.spectral/spectral scan --ok  --include-tags base,audit
+
+spectral-iac-gate2:
+  stage: security-gates
+  script:
+    - curl -L "https://get.spectralops.io/latest/x/sh?key=spu-3170851dd9934b12999c422987fed071" | sh
+    - $HOME/.spectral/spectral scan --ok --engines iac
+
 
 build_image:
   stage: build
