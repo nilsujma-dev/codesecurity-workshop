@@ -2,11 +2,15 @@
 
 stages:
   - build
+  - azure-push
   - deploy
 
 variables:
   IMAGE_NAME: nginx-cloudworkshop
   IMAGE_TAG: "$CI_REGISTRY_IMAGE/$IMAGE_NAME:$CI_COMMIT_REF_SLUG"
+  AZURE_ACR_NAME: aksk8sreg.azurecr.io  # Replace with your actual ACR name
+  AZURE_IMAGE_TAG: "$AZURE_ACR_NAME/$IMAGE_NAME:$CI_COMMIT_REF_SLUG"  # New variable for full ACR tag
+
 
 build_image:
   stage: build
@@ -20,6 +24,24 @@ build_image:
     - docker push "${IMAGE_TAG}"
   only:
     - main
+
+push_to_acr:
+  stage: azure-push
+  image: docker:19.03.12
+  services:
+    - docker:19.03.12-dind
+  script:
+    # Log in to Azure using the service principal.
+    - echo "$AZURE_PASSWORD" | docker login "$AZURE_ACR_NAME" -u "$AZURE_APP_ID" --password-stdin
+
+    # Tag the image for Azure ACR.
+    - docker tag "${IMAGE_NAME}" "${AZURE_IMAGE_TAG}"
+
+    # Push the image to Azure ACR.
+    - docker push "${AZURE_IMAGE_TAG}"
+  only:
+    - main
+
 
 deploy_to_aks:  
   stage: deploy  
