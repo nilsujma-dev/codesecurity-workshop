@@ -32,8 +32,9 @@ push_to_acr:
     - docker:19.03.12-dind
   script:
     # Log in to Azure using the service principal.
+    - echo "$CI_JOB_TOKEN" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY" # Login to Gitlab Image Registry
+    - docker pull "${IMAGE_TAG}"  # Pull the image from GitLab Container Registry 
     - echo "$AZURE_PASSWORD" | docker login "$AZURE_ACR_NAME" -u "$AZURE_APP_ID" --password-stdin
-    - docker pull "${IMAGE_TAG}"  # Pull the image from GitLab Container Registry
     - docker tag "${IMAGE_TAG}" "${AZURE_IMAGE_TAG}"  # Proper tagging for ACR
     - docker push "${AZURE_IMAGE_TAG}"
  
