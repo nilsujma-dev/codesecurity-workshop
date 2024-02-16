@@ -11,7 +11,6 @@ stages:
 variables:
   IMAGE_NAME: cloudsecurity-workshop
   IMAGE_TAG: "$CI_REGISTRY_IMAGE/$IMAGE_NAME:$CI_COMMIT_REF_SLUG"
-  AZURE_ACR_NAME: aksk8sreg.azurecr.io
   AZURE_IMAGE_TAG: "$AZURE_ACR_NAME/$IMAGE_NAME:$CI_COMMIT_REF_SLUG"
 
 spectral-secret-gate:
