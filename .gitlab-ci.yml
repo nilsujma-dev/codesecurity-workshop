@@ -10,8 +10,8 @@ stages:
 
 variables:
   IMAGE_NAME: cloudsecurity-workshop
-  IMAGE_TAG: "$CI_REGISTRY_IMAGE/$IMAGE_NAME:$CI_COMMIT_REF_SLUG"
-  AZURE_IMAGE_TAG: "$AZURE_ACR_NAME/$IMAGE_NAME:$CI_COMMIT_REF_SLUG"
+  IMAGE_TAG: "$CI_REGISTRY_IMAGE/$IMAGE_NAME:$CI_COMMIT_SHA"
+  AZURE_IMAGE_TAG: "$AZURE_ACR_NAME/$IMAGE_NAME:$CI_COMMIT_SHA"
 
 spectral-secret-gate:
   stage: security-gates
@@ -45,7 +45,7 @@ shiftleft_scan:
   services:
     - docker:19.03.12-dind
   script:
-    - echo "$CI_JOB_TOKEN" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY" 
+    - echo "$CI_JOB_TOKEN" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
     - docker pull "$IMAGE_TAG"
     - docker save "$IMAGE_TAG" -o image.tar
     - chmod +x ./shiftleft
@@ -63,37 +63,37 @@ push_to_acr:
   services:
     - docker:19.03.12-dind
   script:
-    - echo "$CI_JOB_TOKEN" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY" 
-    - docker pull "${IMAGE_TAG}"  
+    - echo "$CI_JOB_TOKEN" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    - docker pull "${IMAGE_TAG}"
     - echo "$AZURE_PASSWORD" | docker login "$AZURE_ACR_NAME" -u "$AZURE_APP_ID" --password-stdin
-    - docker tag "${IMAGE_TAG}" "${AZURE_IMAGE_TAG}"  
+    - docker tag "${IMAGE_TAG}" "${AZURE_IMAGE_TAG}"
     - docker push "${AZURE_IMAGE_TAG}"
- 
+
   only:
     - main
 
-acr_shiftleft_scan:  
-  stage: acr-shiftleft-scan  
-  image: docker:19.03.12  
-  services:  
+acr_shiftleft_scan:
+  stage: acr-shiftleft-scan
+  image: docker:19.03.12
+  services:
     - docker:19.03.12-dind
-  script:  
+  script:
     - echo "$AZURE_PASSWORD" | docker login "$AZURE_ACR_NAME" -u "$AZURE_APP_ID" --password-stdin
     - docker pull "${AZURE_IMAGE_TAG}"
     - docker save "${AZURE_IMAGE_TAG}" -o azureimage.tar
     - chmod +x ./shiftleft
 
     - ./shiftleft image-scan -e d29d3391-5284-4a70-9d9b-1a5daf401b5d -i azureimage.tar || true
-  artifacts:  
+  artifacts:
     paths:
       - azureimage.tar
   when: always
-  only:  
+  only:
     - main
 
 
-deploy_to_aks:  
-  stage: deploy  
+deploy_to_aks:
+  stage: deploy
   image: dtzar/helm-kubectl
   script:
     # Decode the KUBECONFIG file
