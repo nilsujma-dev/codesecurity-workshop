@@ -17,13 +17,13 @@ variables:
 spectral-secret-gate:
   stage: security-gates
   script:
-    - curl -L "https://get.spectralops.io/latest/x/sh?key=spu-3170851dd9934b12999c422987fed071" | sh
+    - curl -L "https://get.spectralops.io/latest/x/sh?key=${SPECTRALOPS_KEY}" | sh
     - $HOME/.spectral/spectral scan --ok  --include-tags base,audit
 
 spectral-iac-gate:
   stage: security-gates
   script:
-    - curl -L "https://get.spectralops.io/latest/x/sh?key=spu-3170851dd9934b12999c422987fed071" | sh
+    - curl -L "https://get.spectralops.io/latest/x/sh?key=${SPECTRALOPS_KEY}" | sh
     - $HOME/.spectral/spectral scan --ok --engines iac
 
 
