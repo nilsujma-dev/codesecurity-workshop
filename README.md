@@ -1,93 +1,61 @@
-# codesecurity-workshop
+```markdown
+# Project Documentation
 
+## High-Level Summary
 
+The project establishes an automated pipeline to build, scan for security vulnerabilities, and deploy an Nginx web server containerized in Docker. The application serves static HTML content and is designed to run within a Kubernetes cluster managed by the Azure Kubernetes Service (AKS). The Docker image is built from a `Dockerfile` that configures Nginx and copies over the necessary HTML files. The pipeline orchestrates the process with security scans at each stage, ensuring that the image is safe to deploy. Finally, the pipeline handles the deployment, creating a Kubernetes `Deployment` to manage the Nginx pod(s) and a `Service` to expose it to the internet through a LoadBalancer.
 
-## Getting started
+## Detailed Documentation
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+### Project Overview
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+This project provisions an Nginx web server using Docker and Kubernetes. The web server is configured to serve static HTML content. GitLab CI/CD is utilized for continuous integration and deployment, which includes building the Docker image, pushing it to registries, scanning for vulnerabilities, and deploying to the Azure Kubernetes Service (AKS).
 
-## Add your files
+The `Dockerfile` used for building the Nginx Docker image performs the following steps:
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+- Uses the latest official Nginx image as the base.
+- Removes the default Nginx configuration file.
+- Copies a custom configuration file and HTML files into the image.
+- Exposes port 80 for web traffic.
+- Sets the command to start Nginx.
 
+The Kubernetes deployment (`Deployment`) is designed to maintain a single replica of the Nginx server running. The deployment specifies which Docker image to use through the `$IMAGE_TAG` variable that is dynamically replaced by the CI/CD pipeline. Additionally, a Kubernetes service (`Service`) is created to expose Nginx to the internet via a LoadBalancer that listens on port 80.
+
+### CI/CD Pipeline Stages
+
+1. **Security Gates**: Automated security checks are performed using Spectral to ensure the source code meets the security standards.
+
+2. **Build**: The Docker image for the Nginx web server is built using the provided `Dockerfile`.
+
+3. **ShiftLeft Scan**: After the build stage, the Docker image is scanned for vulnerabilities using the ShiftLeft tool to prevent deployment of images with known security issues.
+
+4. **Azure Push**: The scanned image is then pushed to an Azure Container Registry (ACR), tagged with the appropriate details for identification.
+
+5. **ACR ShiftLeft Scan**: The image in ACR is scanned once again for vulnerabilities, ensuring that the version in the registry is secure before deployment.
+
+6. **Deploy**: The `deploy_to_aks` job applies the Kubernetes deployment and service configurations to the AKS cluster, resulting in the Nginx server running on a dynamically provisioned LoadBalancer that routes traffic to it.
+
+### Pipeline Execution
+
+- Only commits to the `main` branch trigger the pipeline.
+- Environment variables are required for image tagging, registry authentication, and Kubernetes cluster access.
+- Kubernetes configuration files need the `imagePullSecrets` section if private registries are used.
+
+### Reproducing the Pipeline
+
+To utilize this pipeline:
+
+1. Place the `.gitlab-ci.yml`, `Dockerfile`, `nginx.conf`, `index.html`, `access.html`, `deployment.yaml`, and `service.yaml` in the root of the GitLab repository.
+2. Set the required CI/CD variables in your GitLab project.
+3. Ensure that the runner used has Docker available.
+4. Establish Docker registry and Azure Container Registry access.
+5. Configure an Azure Kubernetes Service (AKS) with access credentials and assure that your GitLab runner has permissions to interact with AKS.
+6. Once a push to the `main` branch occurs, monitor the pipeline execution in GitLab CI/CD dashboard to ensure each stage completes successfully.
+
+### Additional Considerations
+
+- The Docker image is built and pushed to multiple registries for redundancy and to facilitate diverse deployment strategies.
+- ShiftLeft scans occur after the build stage and again after pushing to Azure, securing the delivery pipeline at every touchpoint.
+- Kubernetes deployment files are templated to accept image tags specified by environmental variables, maintaining consistency and ensuring deployments utilize the correct image.
+- This detailed documentation can serve as a basis for setting up similar pipelines and is meant to guide technical and non-technical team members alike.
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/nilsujma-dev/codesecurity-workshop.git
-git branch -M main
-git push -uf origin main
-```
-
-## Integrate with your tools
-
-- [ ] [Set up project integrations](https://gitlab.com/nilsujma-dev/codesecurity-workshop/-/settings/integrations)
-
-## Collaborate with your team
-
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
