@@ -1,4 +1,3 @@
-```markdown
 # Project Documentation
 
 ## High-Level Summary
@@ -58,4 +57,3 @@ To utilize this pipeline:
 - ShiftLeft scans occur after the build stage and again after pushing to Azure, securing the delivery pipeline at every touchpoint.
 - Kubernetes deployment files are templated to accept image tags specified by environmental variables, maintaining consistency and ensuring deployments utilize the correct image.
 - This detailed documentation can serve as a basis for setting up similar pipelines and is meant to guide technical and non-technical team members alike.
-```
